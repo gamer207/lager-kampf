@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Lager-Kampf – Final Edition</title>
+<style>
+:root{--ink:#182234;--panel:#fff;--gold:#ffd45c;--blue:#3986f6;--red:#f05252}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at top,#314e6b 0%,#152335 68%,#0b1420 100%);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#edf4fb;min-height:100vh}
+.app{max-width:1580px;margin:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(180deg,#25384d,#101a28);border:2px solid #71849a;border-radius:12px;padding:10px 14px;box-shadow:0 5px 0 #080e16}
+h1{font-size:clamp(19px,3vw,27px);margin:0;letter-spacing:.3px;text-shadow:0 2px 0 #07111e,0 0 18px #65baff55}.sub{font-size:12px;color:#b8c7d8}
+header{position:relative;overflow:hidden}header:after{content:"";position:absolute;left:-30%;top:0;width:28%;height:100%;background:linear-gradient(90deg,transparent,#ffffff12,transparent);transform:skewX(-22deg);animation:headerShine 8s ease-in-out infinite;pointer-events:none}
+@keyframes headerShine{0%,55%{left:-35%}90%,100%{left:130%}}
+.stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.pill{background:linear-gradient(180deg,#142337,#081320);border:1px solid #91a7bc;border-radius:8px;padding:8px 12px;font-weight:900;font-size:15px;color:#ffe0a0;box-shadow:inset 0 1px 0 #ffffff12,0 2px 0 #060d15}
+.arena{position:relative;border:3px solid #9cabbc;border-radius:13px;overflow:hidden;background:#b8e6ff;box-shadow:0 7px 0 #080e16,0 0 28px #63baff18,inset 0 0 0 1px #ffffff45}
+canvas{display:block;width:100%;height:auto;aspect-ratio:1000/430;touch-action:manipulation;image-rendering:auto;filter:saturate(1.08) contrast(1.025)}
+.hud{position:absolute;left:12px;right:12px;top:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none}
+.basehud{width:38%;max-width:360px;background:#111c2bf5;border:2px solid #aab9c9;border-radius:8px;padding:9px 11px;box-shadow:0 3px 0 #080e16;color:#f4f7fb}
+.basehud.right{text-align:right}.base-title{font-size:15px;font-weight:900;display:flex;justify-content:space-between;gap:5px}.right .base-title{flex-direction:row-reverse}
+.hp{height:15px;background:#e3e8ee;border-radius:20px;overflow:hidden;margin-top:6px;border:1px solid #d0d9e3}.hpfill{height:100%;width:100%;background:#42c96b;transition:width .2s}.right .hpfill{background:#f05252}
+.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.panel{background:linear-gradient(155deg,#2c4359 0%,#172639 60%,#101a28 100%);border:2px solid #8a9db1;border-radius:11px;padding:12px;box-shadow:0 4px 0 #080e16, inset 0 1px 0 #ffffff10;min-width:0;color:#edf4fb;transition:border-color .2s,transform .2s,box-shadow .2s}
+.panel h2{font-size:16px;margin:0 0 9px}.energyline{display:flex;justify-content:space-between;font-size:12px;font-weight:800;margin-bottom:5px}.energy{height:17px;border-radius:20px;background:#dfe7ee;overflow:hidden;border:2px solid #c6d3de}.energyfill{height:100%;width:0%;background:linear-gradient(90deg,#e99026,#ffd85c,#fff0a0,#f4b531);background-size:220% 100%;animation:meatShimmer 2.3s linear infinite;transition:width .15s;box-shadow:0 0 12px #ffd45c66}@keyframes meatShimmer{to{background-position:220% 0}}
+.small{font-size:13px;color:#c8d5e3;margin-top:6px}.btns{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+button{font:inherit;border:0;border-radius:11px;padding:12px 10px;font-weight:850;background:#d8e2ed;color:#1e2b3e;box-shadow:0 3px 0 #71849a;cursor:pointer;touch-action:manipulation}
+button:active{transform:translateY(2px) scale(.99);box-shadow:0 1px 0 #c1ceda}button:disabled{opacity:.45;cursor:not-allowed}
+button:not(:disabled){transition:transform .14s ease,filter .14s ease,box-shadow .14s ease;}
+button:not(:disabled):hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 5px 12px #0004,0 3px 0 #71849a}
+.primary:not(:disabled){background:linear-gradient(135deg,#4fa0ff,#2469cf);box-shadow:0 3px 0 #17467e, inset 0 1px 0 #ffffff45}
+.upgrade:not(:disabled){background:linear-gradient(135deg,#fff0b3,#edc251 65%,#c78d27);box-shadow:0 3px 0 #8e6726,inset 0 1px 0 #ffffff8c}
+.primary{background:#3f87f6;color:white;box-shadow:0 3px 0 #245ab5}.upgrade{background:linear-gradient(#ffe49a,#dcae43);box-shadow:0 3px 0 #8e6726}.full{width:100%;margin-top:7px}
+.level{float:right;background:#0b1521;border:1px solid #71849a;border-radius:6px;padding:2px 6px;font-size:11px;color:#ffe0a0}
+.bottom-upgrade{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(120deg,#2b4055,#111b2a,#26384b);background-size:180% 100%;animation:barPulse 9s ease-in-out infinite;border:2px solid #d2aa4d;border-radius:12px;padding:10px 14px;box-shadow:0 -3px 14px #0007,0 0 15px #d2aa4d16;color:#fff}@keyframes barPulse{50%{background-position:100% 0}}.bottom-upgrade .rate{color:#a9e8b4;font-weight:800}.bottom-upgrade button{padding:9px 13px}.notice{text-align:center;font-size:13px;color:#c6d5e5}
+.overlay{position:absolute;inset:0;background:#122033a8;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex;animation:overlayFade .22s ease-out}.modal{max-width:440px;width:100%;max-height:92%;overflow:auto;background:#172638;border:2px solid #9fb0c1;color:#f3f7fc;border-radius:18px;padding:20px;text-align:center;box-shadow:0 8px 0 #080e16}.modal h2{font-size:26px;margin:0 0 6px;text-shadow:0 2px 0 #08111d}.modal{animation:modalPop .28s cubic-bezier(.2,.85,.3,1)}@keyframes overlayFade{from{opacity:0}to{opacity:1}}@keyframes modalPop{from{transform:translateY(12px) scale(.97)}to{transform:translateY(0) scale(1)}}.modal p{margin:5px 0 15px;color:#c9d7e5}.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.menu-stat{background:#0b1521;border:1px solid #71849a;border-radius:10px;padding:10px;font-size:18px}.menu-stat small{display:block;font-size:11px;color:#b9c8d7}.shop-panel{display:none;text-align:left;background:#0d1724;border:1px solid #6d8196;border-radius:10px;padding:10px;margin-top:10px}.shop-panel.open{display:block}.shop-panel .small{margin-top:8px}.menu-modal{max-width:500px}.shop-panel{max-height:45vh;overflow:auto}.world-tag{position:absolute;left:50%;top:70px;transform:translateX(-50%);padding:6px 12px;border:1px solid #ffffff66;border-radius:20px;background:#101a28cc;color:#fff3c2;font-weight:900;font-size:12px;letter-spacing:.5px;text-shadow:0 1px 2px #000;pointer-events:none;white-space:nowrap}.arena:after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:10px;box-shadow:inset 0 0 40px #09141d22}.bottom-upgrade{backdrop-filter:blur(8px)}
+@media(max-width:900px){.controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.app{padding:5px}.controls{grid-template-columns:1fr 1fr}.panel:first-child{grid-column:1/-1}.panel{padding:9px}.hud{top:5px;left:5px;right:5px}.basehud{padding:6px 7px;width:44%}.base-title{font-size:11px}.hp{height:10px}.pill{font-size:11px;padding:5px 7px}button{font-size:13px;padding:11px 6px}.sub{display:none}.small{font-size:12px}}
+
+.game-top{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(330px,.82fr);align-items:start;gap:12px}
+.arena{min-width:0}
+#menuOverlay.overlay{position:static;inset:auto;background:transparent;display:block;padding:0;overflow:visible;z-index:auto}
+#menuOverlay.overlay:not(.show){display:none}
+#menuOverlay.overlay.show{display:block;animation:none}
+#menuOverlay .menu-modal{width:100%;max-width:none;max-height:calc(100vh - 100px);overflow:auto;text-align:left;padding:14px;background:linear-gradient(155deg,#263e54,#111d2c 68%,#0c1520);border:2px solid #9aafc5;box-shadow:0 5px 0 #070e15, inset 0 1px 0 #ffffff12}
+#menuOverlay .menu-modal h2{text-align:left;font-size:clamp(22px,2.1vw,30px)}
+#menuOverlay .menu-modal>p{font-size:12px;line-height:1.45;margin:4px 0 10px}
+#menuOverlay .menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+#menuOverlay .menu-stat{padding:7px;font-size:16px;text-align:center;background:linear-gradient(145deg,#0e1b2a,#1a2d40)}
+#menuOverlay #startGame{font-size:15px;margin-top:2px}
+#menuOverlay #menuShop{font-size:12px;padding:8px}
+#menuOverlay .shop-panel.open{display:grid;grid-template-columns:1fr;gap:8px;max-height:none;overflow:visible;background:transparent;border:0;padding:8px 0 0;margin:0}
+#menuOverlay .shop-group{background:#0d1927;border:1px solid #536b81;border-radius:10px;padding:8px;box-shadow:inset 0 1px 0 #ffffff0b}
+#menuOverlay .shop-group h3{font-size:13px;letter-spacing:.25px;margin:0 0 5px;color:#f7d98d}
+#menuOverlay .shop-group .full{margin-top:5px;padding:9px 7px;font-size:12px;text-align:left;white-space:normal;line-height:1.25}
+#menuOverlay .shop-hint{font-size:10px;color:#b7c7d8;line-height:1.35;margin:0 0 4px}
+#menuOverlay .choice-title{font-size:11px;font-weight:850;color:#b8d6eb;margin:7px 0 5px}
+#menuOverlay .fighter-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#menuOverlay .fighter-choices button{font-size:11px;padding:8px 4px;margin:0;min-width:0}
+#menuOverlay .shop-panel:not(.open){display:none}
+@media(max-width:1000px){.game-top{grid-template-columns:1fr}#menuOverlay .menu-modal{max-height:none}#menuOverlay .shop-panel.open{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){#menuOverlay .shop-panel.open{grid-template-columns:1fr}.game-top{gap:8px}}
+
+
+/* Lesbarer, größerer Shop */
+.game-top{grid-template-columns:minmax(0,1.75fr) minmax(365px,.9fr);gap:14px}
+#menuOverlay .menu-modal{padding:18px}
+#menuOverlay .menu-modal h2{font-size:clamp(25px,2.3vw,33px);margin-bottom:8px}
+#menuOverlay .menu-modal>p{font-size:14px;line-height:1.5;margin:6px 0 13px}
+#menuOverlay .menu-grid{gap:9px;margin:11px 0}
+#menuOverlay .menu-stat{padding:11px 9px;font-size:20px;min-height:66px}
+#menuOverlay .menu-stat small{font-size:13px;margin-top:3px}
+#menuOverlay #startGame{font-size:17px;padding:14px 12px}
+#menuOverlay #menuShop{font-size:15px;padding:12px 10px}
+#menuOverlay .shop-panel.open{gap:10px;padding-top:10px}
+#menuOverlay .shop-group{padding:12px;border-radius:12px}
+#menuOverlay .shop-group h3{font-size:16px;margin:0 0 8px;letter-spacing:.2px}
+#menuOverlay .shop-group .full{margin-top:7px;padding:12px 11px;font-size:14px;line-height:1.35;border-radius:10px;min-height:44px}
+#menuOverlay .shop-hint{font-size:12px;line-height:1.45;margin:0 0 7px}
+#menuOverlay .choice-title{font-size:14px;margin:11px 0 7px}
+#menuOverlay .fighter-choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#menuOverlay .fighter-choices button{font-size:13px;line-height:1.25;padding:12px 7px;min-height:44px;border-radius:9px}
+#menuOverlay .shop-panel{max-height:calc(100vh - 245px);overflow:auto;scrollbar-width:thin;scrollbar-color:#71849a #0b1521}
+#menuOverlay .shop-panel::-webkit-scrollbar{width:10px}
+#menuOverlay .shop-panel::-webkit-scrollbar-track{background:#0b1521;border-radius:12px}
+#menuOverlay .shop-panel::-webkit-scrollbar-thumb{background:#71849a;border:2px solid #0b1521;border-radius:12px}
+@media(max-width:1000px){
+  .game-top{grid-template-columns:1fr}
+  #menuOverlay .menu-modal{max-height:none}
+  #menuOverlay .shop-panel.open{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #menuOverlay .shop-panel{max-height:none}
+}
+@media(max-width:700px){
+  #menuOverlay .shop-panel.open{grid-template-columns:1fr}
+  .game-top{gap:9px}
+  #menuOverlay .menu-modal{padding:12px}
+  #menuOverlay .shop-group{padding:10px}
+  #menuOverlay .shop-group h3{font-size:15px}
+  #menuOverlay .shop-group .full{font-size:14px;padding:12px 10px}
+  #menuOverlay .fighter-choices{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1001px) and (max-height:800px){
+  #menuOverlay .menu-modal{max-height:calc(100vh - 115px)}
+  #menuOverlay .shop-panel{max-height:calc(100vh - 300px)}
+}
+
+
+@media(min-width:1001px){.game-top{grid-template-columns:minmax(0,1.9fr) minmax(330px,.82fr);gap:14px}.arena{align-self:start}}
+header .stats{align-items:center}
+.header-action{padding:8px 11px;border-radius:9px;white-space:nowrap;font-size:13px;border:1px solid #9eb0c2;background:linear-gradient(#e4edf6,#b9c9d8);color:#122033;box-shadow:0 3px 0 #526a80}
+.header-action.pause{background:linear-gradient(#ffe9a6,#d6a738);border-color:#ffe3a0;box-shadow:0 3px 0 #7f5d1e}
+.header-action:disabled{opacity:.4}
+.save-status{font-size:11px;color:#a7efb2;font-weight:800;min-width:66px;text-align:center}
+.pause-screen{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:18px;background:#070e18d9;backdrop-filter:blur(8px)}
+.pause-screen.show{display:flex;animation:overlayFade .2s ease-out}
+.pause-card{width:min(440px,100%);padding:24px;border:2px solid #a7bbcf;border-radius:18px;background:linear-gradient(150deg,#304962,#101b2a 75%);box-shadow:0 12px 0 #050a11,0 0 50px #0008;text-align:center;color:#f5f8fc}
+.pause-card h2{margin:0 0 7px;font-size:clamp(26px,4vw,34px)}
+.pause-card p{margin:0 0 14px;color:#c7d7e5;font-size:14px;line-height:1.5}
+.pause-card button{min-height:46px}
+.paused-badge{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;padding:13px 20px;border:2px solid #ffe39a;border-radius:13px;background:#111c2bf2;color:#ffe39a;font-size:clamp(16px,2vw,24px);font-weight:950;letter-spacing:1px;text-align:center;box-shadow:0 5px 0 #050a11,0 0 30px #0008;pointer-events:none;white-space:nowrap}.paused-badge.show{display:block}
+@media(max-width:1000px){header{align-items:flex-start}header .stats{justify-content:flex-start}.header-action{font-size:12px;padding:7px 9px}}
+@media(max-width:650px){header{flex-direction:column}.header-action{font-size:12px;padding:8px 9px}.save-status{text-align:left}}
+
+
+/* FINAL RELEASE FINISH */
+:root{color-scheme:dark}
+html{min-height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%;touch-action:pan-x pan-y}
+body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+.app{width:100%;user-select:none;-webkit-user-select:none}
+button,canvas{touch-action:manipulation}
+button:focus-visible{outline:3px solid #fff0a0;outline-offset:3px}
+.arena{isolation:isolate}
+.arena canvas{position:relative;z-index:0}
+.hud,.world-tag,.paused-badge{z-index:2}
+#menuOverlay{z-index:4}
+header,.panel,.pill,.bottom-upgrade,.basehud{backdrop-filter:blur(8px)}
+.basehud{box-shadow:0 4px 0 #080e16,0 0 18px #0003,inset 0 1px 0 #ffffff16}
+.hpfill{box-shadow:inset 0 1px 0 #ffffff55,0 0 8px #51df7c44}
+.panel h2{letter-spacing:.15px;text-shadow:0 1px 0 #08111d}
+.full{min-height:42px}
+.controls .panel{background-image:linear-gradient(150deg,#2d465f 0%,#18293e 55%,#111a29 100%),linear-gradient(#fff,#fff);background-blend-mode:normal}
+#menuOverlay .menu-modal{box-shadow:0 7px 0 #070e15,0 14px 35px #0004,inset 0 1px 0 #ffffff18}
+#menuOverlay .shop-group{box-shadow:inset 0 1px 0 #ffffff12,0 3px 0 #070d13}
+.bottom-upgrade{border-color:#dfbd65}
+@media(min-width:1001px){
+  .arena canvas{min-height:300px}
+  .game-top{align-items:stretch}
+}
+@media(max-width:1000px){
+  .game-top{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:650px){
+  .app{padding:5px;gap:7px}
+  header{padding:9px}
+  .arena{border-width:2px}
+  .hud{gap:6px}
+  .basehud{width:46%;padding:6px}
+  .base-title{font-size:10px}
+  .base-title span{line-height:1.25}
+  .controls{gap:7px}
+  .pill{box-shadow:0 1px 0 #060d15}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+<header><div><h1>⚔️ Lager-Kampf</h1><div class="sub">Schicke Truppen los und verbessere deine Armee!</div></div><div class="stats"><div class="pill">🥩 Fleisch: <span id="coins">0</span></div><div class="pill">🪙 Münzen: <span id="gold">0</span></div><div class="pill">🌍 <span id="headerWorld">Welt 1</span> · Level <span id="headerLevel">1</span></div><div class="pill">👥 Truppen: <span id="troopCount">0</span></div><button class="header-action" id="saveButton" type="button">💾 Speichern</button><span class="save-status" id="saveStatus" aria-live="polite"></span></div></header>
+<div class="game-top">
+<section class="arena">
+<canvas id="game" width="1000" height="430" aria-label="Schlachtfeld mit deinem Lager links und dem Gegnerlager rechts"></canvas>
+<div class="hud">
+ <div class="basehud"><div class="base-title"><span>🏰 DEIN LAGER</span><span id="myHpText">100 / 100</span></div><div class="hp"><div id="myHp" class="hpfill"></div></div></div>
+ <div class="basehud right"><div class="base-title"><span>🏴 GEGNERLAGER</span><span id="enemyHpText">220 / 220</span></div><div class="hp"><div id="enemyHp" class="hpfill"></div></div></div>
+</div>
+<div class="world-tag" id="worldTag">🌿 GRÜNE LANDE · LEVEL 1</div><div class="paused-badge" id="pausedBadge">⏸ KAMPF PAUSIERT</div>
+<div class="overlay" id="overlay"><div class="modal"><h2 id="endTitle">Sieg!</h2><p id="endText">Das Lager ist erobert.</p><button class="primary full" id="restart">Zur Startseite</button></div></div>
+<div class="overlay" id="levelOverlay"><div class="modal"><h2 id="levelTitle">🎉 Level geschafft!</h2><p id="levelText">Das nächste Lager wartet bereits.</p><button class="primary full" id="nextLevel">➡️ Nächstes Level starten</button><button class="upgrade full" id="backMenu">Zur Startseite</button></div></div>
+</section>
+<div class="overlay show" id="menuOverlay"><div class="modal menu-modal">
+<h2>🏰 Lager-Kommando</h2><p>Eine Seite für alles: Kämpfe links, kaufe und wähle deine Truppen hier. Fleisch, Stärke, Kämpfer-Tempo und Fleischtempo starten in jedem neuen Level neu. Münzen, Kämpfer-Freischaltungen und Fähigkeiten bleiben erhalten.</p>
+<div class="menu-grid"><div class="menu-stat">🥩 <b id="menuMeat">0</b><small>Fleisch</small></div><div class="menu-stat">🪙 <b id="menuGold">0</b><small>Münzen</small></div><div class="menu-stat">🌍 <b id="menuWorld">Welt 1</b><small id="menuWorldName">Grüne Lande</small></div><div class="menu-stat">⚔️ <b id="menuLevel">1</b><small>Level</small></div></div>
+<button class="primary full" id="startGame">▶ Kampf starten</button><button class="upgrade full" id="menuShop">🛒 Kämpfer &amp; Upgrades anzeigen</button>
+<div id="shopPanel" class="shop-panel">
+<div class="shop-group"><h3>🏰 Burg & Vorrat</h3><button class="upgrade full" id="buyMaxMeat">Fleischkapazität +25 · 5 Münzen</button><button class="upgrade full" id="buyIncome">Fleischtempo verbessern · 4 Fleisch</button><button class="upgrade full" id="buyBase">Burgleben +25 · 6 Münzen</button></div>
+<div class="shop-group"><h3>⚔️ Neue Kämpfer</h3><p class="shop-hint">Einmal mit Münzen freischalten – vor einem Kampf auswählen. Im Kampf: Start-/Pause-Taste → „Zur Startseite / Shop“.</p><button class="upgrade full" id="buyArcher">🏹 Bogenschützen · 15 Münzen</button><button class="upgrade full" id="buyKnight">🛡️ Ritter · 25 Münzen</button><button class="upgrade full" id="buySpear">🔱 Speerkämpfer · 20 Münzen</button><button class="upgrade full" id="buyMage">✨ Magier · 35 Münzen</button><div class="choice-title">Deinen Trupp wählen</div><div class="fighter-choices"><button class="upgrade" id="chooseSoldier">🗡️ Kämpfer</button><button class="upgrade" id="chooseArcher" disabled>🏹 Bogen</button><button class="upgrade" id="chooseKnight" disabled>🛡️ Ritter</button><button class="upgrade" id="chooseSpear" disabled>🔱 Speer</button><button class="upgrade" id="chooseMage" disabled>✨ Magier</button></div></div>
+<div class="shop-group"><h3>🌍 Neue Welten</h3><p class="shop-hint">Schließe zuerst alle 15 Level der vorherigen Welt ab. Jede neue Welt kostet einmalig 20 Münzen.</p><button class="upgrade full" id="unlockWorld2">🔒 Welt 2 freischalten · 20 Münzen</button><button class="upgrade full" id="unlockWorld3">🔒 Welt 3 freischalten · 20 Münzen</button><p class="shop-hint" id="worldUnlockHint">Welt 2 wird nach Level 15 verfügbar. Welt 3 wird nach Level 30 verfügbar.</p></div>
+<div class="shop-group"><h3>✨ Fähigkeiten</h3><button class="upgrade full" id="buyFire">🔥 Feuerstoß · 25 Münzen</button><button class="upgrade full" id="buyHeal">💚 Heilung · 20 Münzen</button><p class="shop-hint">Im Kampf je einmal pro Level einsetzbar.</p></div>
+</div></div></div>
+</div>
+<div class="pause-screen" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle"><div class="pause-card"><h2 id="pauseTitle">⏸ Spiel pausiert</h2><p>Der Kampf und das Fleisch-Nachladen sind angehalten. Du kannst weiterspielen oder deinen Fortschritt sichern.</p><button class="primary full" id="resumeGame">▶ Weiterkämpfen</button><button class="upgrade full" id="saveFromPause">💾 Spiel speichern</button><button class="full" id="pauseToMenu">🏰 Zur Startseite / Shop</button></div></div>
+<section class="controls">
+ <div class="panel"><h2>🥩 Fleisch-Vorrat</h2><div class="energyline"><span>Fleisch lädt langsam nach</span><span><b id="energyText">0</b> / <span id="energyMaxText">100</span></span></div><div class="energy"><div id="energyFill" class="energyfill"></div></div><button id="send" class="primary full">🛡️ Kämpfer schicken · 2 Fleisch</button><div class="small">Du startest mit 0 Fleisch. Erst wenn der Balken lädt, kannst du Kämpfer schicken. Die Kosten steigen langsam bis maximal 10 Fleisch.</div></div>
+ <div class="panel"><h2>💪 Kämpfer verbessern <span class="level" id="unitLevel">Stufe 1</span></h2><div class="small">Kostet Fleisch. Erhöht Stärke und Leben deiner Kämpfer.</div><button id="upgradeUnit" class="upgrade full">Stärke-Upgrade · <span id="unitCost">8</span> 🥩</button><div class="small">Aktuell: <span id="unitStats">10 Schaden · 30 Leben</span></div></div>
+ <div class="panel"><h2>💨 Schnelligkeit <span class="level" id="speedLevel">Stufe 1</span></h2><div class="small">Mehr Tempo, aber bewusst begrenzt. Maximal Stufe 4 (ca. 1,4×).</div><button id="upgradeSpeed" class="upgrade full">Tempo-Upgrade · <span id="speedCost">6</span> 🥩</button><div class="small">Lauftempo: <span id="speedStats">1,0×</span></div></div><div class="panel"><h2>✨ Fähigkeiten</h2><div class="small">Kaufe Fähigkeiten auf der Startseite. Jede kannst du einmal pro Level einsetzen.</div><button id="fireAbility" class="primary full" disabled>🔥 Feuerstoß</button><button id="healAbility" class="primary full" disabled>💚 Lager heilen</button><div class="small" id="abilityStatus">Noch keine Fähigkeit freigeschaltet.</div></div>
+</section>
+<div class="bottom-upgrade" id="bottomUpgrade"><span>🥩 Fleischtempo <b id="incomeLevelBottom">Stufe 1</b></span><span class="rate" id="incomeRateBottom">+0,55 / Sek.</span><button id="upgradeIncomeBottom" class="upgrade">Tempo erhöhen · <b id="incomeBottomCost">4</b> 🥩</button></div>
+<div class="notice">Tipp: Besiege Gegner, sammle Fleisch und verbessere deine Truppen. Das gegnerische Lager hat mehr Leben!</div>
+</div>
+<script>
+(() => {
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const LOGICAL_WIDTH=1000, LOGICAL_HEIGHT=430;
+function setupCanvasResolution(){
+  const dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));
+  const pixelWidth=Math.round(LOGICAL_WIDTH*dpr),pixelHeight=Math.round(LOGICAL_HEIGHT*dpr);
+  if(canvas.width!==pixelWidth)canvas.width=pixelWidth;
+  if(canvas.height!==pixelHeight)canvas.height=pixelHeight;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+const $=id=>document.getElementById(id);
+let state;
+function closeShop(){
+  const panel=document.getElementById('shopPanel');
+  const button=document.getElementById('menuShop');
+  if(panel) panel.classList.remove('open');
+  if(button) button.textContent='🛒 Kämpfer & Upgrades anzeigen';
+}
+function worldInfo(level=state.level){const index=Math.min(2,Math.floor((level-1)/15)),stage=((level-1)%15)+1;return {index,stage,name:['Grüne Lande','Vulkanwelt','Säurewelt'][index],icon:['🌿','🌋','☣️'][index]}}
+function reset(){state={myHp:100,myMax:100,enemyHp:220,enemyMax:220,energyMax:100,coins:0,gold:0,unlockedArcher:false,unlockedKnight:false,unlockedSpear:false,unlockedMage:false,fireUnlocked:false,healUnlocked:false,fireUsed:false,healUsed:false,selectedType:'soldier',unitLevel:1,speedLevel:1,units:[],enemies:[],particles:[],projectiles:[],floaters:[],shake:0,visualTime:0,last:performance.now(),spawnTimer:4,ended:false,elapsed:0,level:1,screen:'menu',paused:false,resumeAvailable:false,endType:'',completedLevels:0,worldsUnlocked:[true,false,false],incomeLevel:1,hpLevel:1,meatSpeedBuys:0,unitBuys:0,unitUpgradeBuys:0,speedUpgradeBuys:0,capBuys:0,incomeBuys:0,baseBuys:0};$('overlay').classList.remove('show');$('levelOverlay').classList.remove('show');$('menuOverlay').classList.add('show');closeShop();updateUI();draw()}
+const SAVE_KEY='lagerKampfFinalRelease_v3';
+let lastSaveAt=0;
+function saveGame(showFeedback=true){
+  try{
+    if(!state)return false;
+    const snapshot={...state,version:1,units:state.units.map(u=>({...u})),enemies:state.enemies.map(u=>({...u})),particles:[],projectiles:[],floaters:[],shake:0,visualTime:0,last:0,paused:false};
+    localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot));
+    lastSaveAt=performance.now();
+    if(showFeedback){$('saveStatus').textContent='✓ Gespeichert';$('saveButton').textContent='✓ Gespeichert';}
+    return true;
+  }catch(err){
+    if(showFeedback){$('saveStatus').textContent='Speichern nicht verfügbar';$('saveButton').textContent='⚠ Speichern';}
+    return false;
+  }
+}
+function configureWinDialog(){
+  const w=worldInfo(),reward=10+state.level*3;
+  if(state.level>=45){
+    $('levelTitle').textContent='🏆 Alle 45 Level geschafft!';
+    $('levelText').textContent='Du hast alle drei Welten erobert! Deine Siegesbelohnung wurde gutgeschrieben.';
+    $('nextLevel').textContent='🎉 Zur Startseite';
+  }else if(w.stage===15){
+    const nextWorld=w.index+1;
+    const names=['Grüne Lande','Vulkanwelt','Säurewelt'];
+    if(state.worldsUnlocked[nextWorld]){
+      $('levelTitle').textContent='🌍 '+w.name+' abgeschlossen!';
+      $('levelText').textContent='Du hast alle 15 Level geschafft. Weiter geht es in '+names[nextWorld]+'. Deine Belohnung: '+reward+' Münzen.';
+      $('nextLevel').textContent='➡️ '+names[nextWorld]+' starten';
+    }else{
+      $('levelTitle').textContent='🌍 '+w.name+' abgeschlossen!';
+      $('levelText').textContent='Alle 15 Level geschafft! Du erhältst '+reward+' Münzen. Die nächste Welt kostet einmalig 20 Münzen.';
+      $('nextLevel').textContent=state.gold>=20?'🔓 Welt '+(nextWorld+1)+' freischalten · 20 Münzen':'🪙 Du brauchst 20 Münzen';
+    }
+  }else{
+    $('levelTitle').textContent='🎉 Level '+state.level+' geschafft!';
+    $('levelText').textContent='Deine Belohnung von '+reward+' Münzen ist gesichert. Das nächste Level wartet.';
+    $('nextLevel').textContent='➡️ Nächstes Level starten';
+  }
+}
+function loadSavedGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
+    const saved=JSON.parse(raw);if(!saved||saved.version!==1||!Number.isFinite(saved.level)||saved.level<1||saved.level>45)return false;
+    const savedScreen=saved.screen;
+    state={...saved,units:Array.isArray(saved.units)?saved.units:[],enemies:Array.isArray(saved.enemies)?saved.enemies:[],particles:[],projectiles:[],floaters:[],shake:0,last:performance.now(),visualTime:0,paused:false};
+    if(!Array.isArray(state.worldsUnlocked)){state.worldsUnlocked=[true,state.level>15,state.level>30];}
+    state.worldsUnlocked[0]=true;
+    if(!Number.isFinite(state.completedLevels)){state.completedLevels=Math.max(0,Math.min(45,(saved.ended&&saved.endType==='win')?saved.level:saved.level-1));}
+    const canResume=(savedScreen==='game'&&!state.ended)||saved.resumeAvailable===true;
+    state.resumeAvailable=canResume;
+    if(state.ended){state.screen='game';$('menuOverlay').classList.remove('show');if(state.endType==='win'){configureWinDialog();$('levelOverlay').classList.add('show');}else{$('endTitle').textContent='💥 Lager verloren';$('endText').textContent='Dein gespeicherter Stand ist geladen. Gehe zur Startseite, rüste auf und versuche es erneut.';$('overlay').classList.add('show');}}
+    else{state.screen='menu';$('menuOverlay').classList.add('show');$('overlay').classList.remove('show');$('levelOverlay').classList.remove('show');closeShop();}
+    $('pauseOverlay').classList.remove('show');$('pausedBadge').classList.toggle('show',state.paused);updateUI();draw();
+    $('saveStatus').textContent='✓ Spielstand geladen';return true;
+  }catch(err){return false}
+}
+function togglePause(){
+  if(state.screen!=='game'||state.ended)return;
+  state.paused=!state.paused;
+  // While paused, show the pause menu with a clear "Zur Startseite / Shop" button.
+  $('pauseOverlay').classList.toggle('show',state.paused);
+  $('pausedBadge').classList.toggle('show',state.paused);
+  state.last=performance.now();
+  updateUI();
+  saveGame(false);
+}
+function resumeGame(){
+  state.paused=false;
+  state.screen='game';
+  state.resumeAvailable=false;
+  $('pauseOverlay').classList.remove('show');
+  // menuOverlay is also the permanent command panel containing the shared start/pause button.
+  $('menuOverlay').classList.add('show');
+  $('pausedBadge').classList.remove('show');
+  state.last=performance.now();
+  updateUI();
+  saveGame(false);
+}
+
+function rand(a,b){return a+Math.random()*(b-a)}
+function addParticle(x,y,color,n=6){for(let i=0;i<n;i++)state.particles.push({x,y,vx:rand(-95,95),vy:rand(-125,-18),life:rand(.3,.75),max:.75,color,size:rand(1.5,4.2)})}
+function floatText(x,y,text,color='#fff0b2',size=13){state.floaters.push({x,y,text,color,size,life:.9,max:.9,vy:rand(25,42)})}
+function spawnCost(){return Math.min(10,2+state.unitBuys)}
+function spawnUnit(){if(state.ended||state.screen!=='game'||state.coins<spawnCost())return;state.coins-=spawnCost();state.unitBuys++;const type=state.selectedType||'soldier';const bonusHp=type==='knight'?35:type==='spear'?12:0;const bonusDamage=type==='archer'?3:type==='knight'?8:type==='spear'?5:type==='mage'?12:0;const speedFactor=type==='knight'?.78:type==='mage'?.9:1;const range=type==='archer'?145:type==='mage'?160:type==='spear'?48:36;const hp=unitHp()+bonusHp;const damage=unitDmg()+bonusDamage;state.units.push({x:145,y:305+rand(-15,15),hp,maxHp:hp,attack:damage,speed:unitSpeed()*speedFactor,speedFactor,cool:rand(0,.3),kind:'ally',type,range,animTime:rand(0,3),swing:0,hitFlash:0,moving:false,attackDir:1,spawnIn:.25});addParticle(145,315,type==='mage'?'#d7a7ff':'#d9c49a',9);floatText(145,278,type==='archer'?'BOGENSCHÜTZE':type==='knight'?'RITTER':type==='spear'?'SPEERKÄMPFER':type==='mage'?'MAGIER':'KÄMPFER','#d9ecff',11);updateUI()}
+function unitHp(){return 30+(state.unitLevel-1)*15}
+function unitDmg(){return 10+(state.unitLevel-1)*5}
+function unitSpeed(){return 48+(Math.min(4,state.speedLevel)-1)*7}
+function upgrade(kind){
+if(state.ended||state.screen!=='game')return;
+if(kind==='unit'){
+  let cost=unitCost();if(state.coins<cost)return;
+  state.coins-=cost;state.unitLevel++;state.unitUpgradeBuys++;
+  for(const u of state.units){u.maxHp+=15;u.hp+=15;u.attack+=5}
+}else{
+  if(state.speedLevel>=4)return;
+  let cost=speedCost();if(state.coins<cost)return;
+  state.coins-=cost;state.speedLevel++;state.speedUpgradeBuys++;
+  const cappedSpeed=unitSpeed();
+  for(const u of state.units)u.speed=cappedSpeed*(u.speedFactor||1);
+}
+updateUI()
+}
+function unitCost(){return 8+(state.unitUpgradeBuys||0)*3}
+function speedCost(){return 6+(state.speedUpgradeBuys||0)*2}
+function capCost(){return 5+(state.capBuys||0)*2}
+function incomeCost(){return meatSpeedCost()}
+function baseCost(){return 6+(state.baseBuys||0)*2}
+function meatSpeedCost(){return 4+(state.meatSpeedBuys||0)*2}
+function worldEnemyHp(){const w=worldInfo();return 210+w.stage*14+w.index*100+(w.stage%5)*12}
+function startFire(){if(state.screen!=='game'||state.ended||!state.fireUnlocked||state.fireUsed)return;state.fireUsed=true;const damage=18+state.unitLevel*7+worldInfo().index*7;for(const e of state.enemies){if(e.hp<=0)continue;e.hp-=damage;addParticle(e.x,e.y-10,'#ff762e',15);addParticle(e.x,e.y-10,'#ffe99a',7);floatText(e.x,e.y-25,'-'+damage,'#ffbd68',14);if(e.hp<=0){state.gold+=1;floatText(e.x,e.y-42,'+1 🪙','#ffe078',12)}}state.enemyHp=Math.max(0,state.enemyHp-Math.floor(state.enemyMax*.10));addParticle(750,250,'#ff692f',35);addParticle(780,260,'#ffd268',22);floatText(760,210,'FEUERSTOß!','#ffb25e',20);state.shake=Math.max(state.shake,2.5);updateUI()}
+function startHeal(){if(state.screen!=='game'||state.ended||!state.healUnlocked||state.healUsed)return;state.healUsed=true;const amount=Math.ceil(state.myMax*.35);state.myHp=Math.min(state.myMax,state.myHp+amount);addParticle(120,260,'#61f5a8',28);floatText(130,225,'+'+amount+' Leben','#95ffc1',18);updateUI()}
+$('saveButton').onclick=()=>saveGame(true);$('resumeGame').onclick=resumeGame;$('saveFromPause').onclick=()=>saveGame(true);$('pauseToMenu').onclick=()=>{state.paused=false;state.screen='menu';state.resumeAvailable=true;$('pauseOverlay').classList.remove('show');$('menuOverlay').classList.add('show');$('pausedBadge').classList.remove('show');closeShop();state.last=performance.now();updateUI();saveGame(false)};window.addEventListener('pagehide',()=>saveGame(false));$('send').onclick=spawnUnit;$('upgradeUnit').onclick=()=>upgrade('unit');$('upgradeSpeed').onclick=()=>upgrade('speed');$('upgradeIncomeBottom').onclick=()=>{const cost=meatSpeedCost();if(state.screen==='game'&&!state.ended&&state.coins>=cost){state.coins-=cost;state.incomeLevel++;state.meatSpeedBuys++;updateUI()}};$('fireAbility').onclick=startFire;$('healAbility').onclick=startHeal;
+$('restart').onclick=()=>{state.screen='menu';state.ended=false;state.endType='';state.paused=false;state.resumeAvailable=false;$('overlay').classList.remove('show');$('menuOverlay').classList.add('show');closeShop();updateUI();saveGame(false)};
+$('startGame').onclick=()=>{
+  if(state.screen==='game'){
+    if(state.ended)return;
+    togglePause();
+    return;
+  }
+  if(state.screen!=='menu')return;
+  if(state.level>=45)reset();
+  state.screen='game';state.resumeAvailable=false;state.paused=false;state.ended=false;
+  $('levelOverlay').classList.remove('show');$('overlay').classList.remove('show');$('pausedBadge').classList.remove('show');
+  state.last=performance.now();updateUI()
+};
+$('menuShop').onclick=()=>{const panel=$('shopPanel');panel.classList.toggle('open');$('menuShop').textContent=panel.classList.contains('open')?'🛒 Shop einklappen':'🛒 Kämpfer & Upgrades anzeigen'};
+$('buyMaxMeat').onclick=()=>{const cost=capCost();if(state.screen==='menu'&&state.gold>=cost){state.gold-=cost;state.energyMax+=25;state.capBuys++;updateUI()}};
+$('buyIncome').onclick=()=>{const cost=meatSpeedCost();if(state.screen==='menu'&&state.coins>=cost){state.coins-=cost;state.incomeLevel++;state.meatSpeedBuys++;updateUI()}};
+$('buyBase').onclick=()=>{const cost=baseCost();if(state.screen==='menu'&&state.gold>=cost){state.gold-=cost;state.hpLevel++;state.myMax+=25;state.myHp=Math.min(state.myMax,state.myHp+25);state.baseBuys++;updateUI()}};
+$('buyArcher').onclick=()=>{if(state.screen==='menu'&&state.gold>=10&&!state.unlockedArcher){state.gold-=10;state.unlockedArcher=true;updateUI()}};
+$('buyKnight').onclick=()=>{if(state.screen==='menu'&&state.gold>=25&&!state.unlockedKnight){state.gold-=25;state.unlockedKnight=true;updateUI()}};
+$('buySpear').onclick=()=>{if(state.screen==='menu'&&state.gold>=20&&!state.unlockedSpear){state.gold-=20;state.unlockedSpear=true;updateUI()}};
+$('buyMage').onclick=()=>{if(state.screen==='menu'&&state.gold>=35&&!state.unlockedMage){state.gold-=35;state.unlockedMage=true;updateUI()}};
+$('buyFire').onclick=()=>{if(state.screen==='menu'&&state.gold>=25&&!state.fireUnlocked){state.gold-=25;state.fireUnlocked=true;updateUI()}};
+$('buyHeal').onclick=()=>{if(state.screen==='menu'&&state.gold>=20&&!state.healUnlocked){state.gold-=20;state.healUnlocked=true;updateUI()}};
+$('chooseSoldier').onclick=()=>{if(state.screen==='menu'){state.selectedType='soldier';updateUI()}};
+$('chooseArcher').onclick=()=>{if(state.unlockedArcher&&state.screen==='menu'){state.selectedType='archer';updateUI()}};
+$('chooseKnight').onclick=()=>{if(state.unlockedKnight&&state.screen==='menu'){state.selectedType='knight';updateUI()}};
+$('chooseSpear').onclick=()=>{if(state.unlockedSpear&&state.screen==='menu'){state.selectedType='spear';updateUI()}};
+$('chooseMage').onclick=()=>{if(state.unlockedMage&&state.screen==='menu'){state.selectedType='mage';updateUI()}};
+function updateWorldUnlockButtons(){
+  const completed=state.completedLevels||0;
+  const configs=[
+    {id:'unlockWorld2',index:1,label:'🌋 Welt 2 · Vulkanwelt',required:15},
+    {id:'unlockWorld3',index:2,label:'☣️ Welt 3 · Säurewelt',required:30}
+  ];
+  for(const c of configs){
+    const button=$(c.id),isOpen=!!state.worldsUnlocked[c.index];
+    if(isOpen)button.textContent='✅ '+c.label+' freigeschaltet';
+    else if(completed<c.required)button.textContent='🔒 '+c.label+' · erst Level '+(c.required-14)+'–'+c.required+' schaffen';
+    else button.textContent='🔓 '+c.label+' freischalten · 20 Münzen';
+    button.disabled=state.screen!=='menu'||isOpen||completed<c.required||state.gold<20;
+  }
+  $('worldUnlockHint').textContent=state.worldsUnlocked[2]?'Alle drei Welten sind freigeschaltet.':state.worldsUnlocked[1]?'Welt 2 ist frei. Schließe Level 16–30 ab, um Welt 3 freizuschalten.':'Schließe Level 1–15 ab, um Welt 2 freizuschalten. Danach wartet Welt 3 nach Level 30.';
+}
+function purchaseWorld(worldIndex,fromVictory=false){
+  if(worldIndex<1||worldIndex>2||state.worldsUnlocked[worldIndex])return false;
+  if((state.completedLevels||0)<worldIndex*15||state.gold<20)return false;
+  state.gold-=20;
+  state.worldsUnlocked[worldIndex]=true;
+  if(!fromVictory&&state.level===worldIndex*15&&!state.ended){
+    state.level=worldIndex*15+1;
+    resetLevelRoundResources();
+    state.enemyMax=worldEnemyHp();state.enemyHp=state.enemyMax;
+    state.units=[];state.enemies=[];state.projectiles=[];state.particles=[];state.floaters=[];
+    state.elapsed=0;state.spawnTimer=4;
+  }
+  updateUI();saveGame(false);return true;
+}
+$('unlockWorld2').onclick=()=>{if(purchaseWorld(1,false))updateUI()};
+$('unlockWorld3').onclick=()=>{if(purchaseWorld(2,false))updateUI()};
+$('nextLevel').onclick=()=>{
+  if(state.level>=45){$('levelOverlay').classList.remove('show');$('menuOverlay').classList.add('show');state.screen='menu';$('startGame').textContent='🔁 Kampagne erneut spielen';closeShop();updateUI();saveGame(false);return;}
+  if(state.level%15===0){
+    const nextWorld=Math.floor(state.level/15);
+    if(!state.worldsUnlocked[nextWorld]&&!purchaseWorld(nextWorld,true)){updateUI();return;}
+  }
+  nextLevel();
+};$('backMenu').onclick=()=>{$('levelOverlay').classList.remove('show');$('menuOverlay').classList.add('show');state.screen='menu';state.ended=false;state.endType='';state.resumeAvailable=false;closeShop();updateUI();saveGame(false)};
+
+function resetLevelRoundResources(){
+  // Fleisch ist die laufende Level-Ressource; Münzen (gold) bleiben dauerhaft.
+  state.coins = 0;
+  state.incomeLevel = 1;
+  state.meatSpeedBuys = 0;
+  state.incomeBuys = 0;
+  state.unitLevel = 1;
+  state.unitUpgradeBuys = 0;
+  state.speedLevel = 1;
+  state.speedUpgradeBuys = 0;
+  state.unitBuys = 0;
+  state.fireUsed = false;
+  state.healUsed = false;
+}
+
+function nextLevel(){state.level++;resetLevelRoundResources();state.endType='';state.resumeAvailable=false;const w=worldInfo();state.myHp=Math.min(state.myMax,state.myHp+Math.ceil(state.myMax*.25));state.enemyMax=worldEnemyHp();state.enemyHp=state.enemyMax;state.units=[];state.enemies=[];state.particles=[];state.projectiles=[];state.floaters=[];state.elapsed=0;state.spawnTimer=4;state.ended=false;state.fireUsed=false;state.healUsed=false;state.screen='game';$('levelOverlay').classList.remove('show');state.last=performance.now();updateUI();saveGame(false)}
+function updateUI(){
+const w=worldInfo();
+$('coins').textContent=Math.floor(state.coins);$('gold').textContent=Math.floor(state.gold);$('startGame').disabled=state.screen==='game'&&state.ended;$('startGame').textContent=state.screen==='game'?(state.paused?'▶ Weiterkämpfen':'⏸ Kampf anhalten'):(state.resumeAvailable?'▶ Kampf fortsetzen':'▶ Kampf starten');$('pausedBadge').classList.toggle('show',state.paused);$('menuGold').textContent=Math.floor(state.gold);$('headerLevel').textContent=state.level;$('headerWorld').textContent='Welt '+(w.index+1);$('menuMeat').textContent=Math.floor(state.coins);$('menuWorld').textContent='Welt '+(w.index+1);$('menuWorldName').textContent=w.name;$('menuLevel').textContent=state.level;$('troopCount').textContent=state.units.length;$('worldTag').textContent=w.icon+' '+w.name.toUpperCase()+' · LEVEL '+w.stage+'/15';
+$('myHpText').textContent=Math.ceil(state.myHp)+' / '+state.myMax;$('enemyHpText').textContent=Math.ceil(state.enemyHp)+' / '+state.enemyMax;$('myHp').style.width=Math.max(0,state.myHp/state.myMax*100)+'%';$('enemyHp').style.width=Math.max(0,state.enemyHp/state.enemyMax*100)+'%';
+$('energyText').textContent=Math.floor(state.coins);$('energyMaxText').textContent=state.energyMax;$('energyFill').style.width=(state.coins/state.energyMax*100)+'%';$('unitLevel').textContent='Stufe '+state.unitLevel;$('speedLevel').textContent='Stufe '+state.speedLevel;
+$('unitCost').textContent=unitCost();$('speedCost').textContent=state.speedLevel>=4?'MAX':speedCost();$('incomeLevelBottom').textContent='Stufe '+state.incomeLevel;$('incomeRateBottom').textContent='+'+(0.55+(state.incomeLevel-1)*0.18).toFixed(2).replace('.',',')+' Fleisch/Sek.';$('incomeBottomCost').textContent=meatSpeedCost();$('unitStats').textContent=unitDmg()+' Schaden · '+unitHp()+' Leben';$('speedStats').textContent=(unitSpeed()/48).toFixed(1).replace('.',',')+'×'+(state.speedLevel>=4?' · MAX':'');
+const typeName={soldier:'Kämpfer',archer:'Bogenschütze',knight:'Ritter',spear:'Speerkämpfer',mage:'Magier'};
+$('send').textContent='🛡️ '+typeName[state.selectedType]+' schicken · '+spawnCost()+' Fleisch';
+$('buyMaxMeat').textContent='Fleischkapazität +25 · '+capCost()+' Münzen';$('buyIncome').textContent='Fleischtempo verbessern · '+incomeCost()+' Fleisch';$('buyBase').textContent='Burgleben +25 · '+baseCost()+' Münzen';
+$('buyArcher').textContent=state.unlockedArcher?'🏹 Bogenschützen freigeschaltet':'Bogenschützen freischalten · 10 Münzen';$('buyKnight').textContent=state.unlockedKnight?'🛡️ Ritter freigeschaltet':'Ritter freischalten · 25 Münzen';$('buySpear').textContent=state.unlockedSpear?'🔱 Speerkämpfer freigeschaltet':'Speerkämpfer freischalten · 20 Münzen';$('buyMage').textContent=state.unlockedMage?'✨ Magier freigeschaltet':'Magier freischalten · 35 Münzen';$('buyFire').textContent=state.fireUnlocked?'🔥 Feuerstoß freigeschaltet':'🔥 Feuerstoß freischalten · 25 Münzen';$('buyHeal').textContent=state.healUnlocked?'💚 Heilung freigeschaltet':'💚 Heilung freischalten · 20 Münzen';
+for(const [id,unlocked] of [['chooseArcher',state.unlockedArcher],['chooseKnight',state.unlockedKnight],['chooseSpear',state.unlockedSpear],['chooseMage',state.unlockedMage]])$(id).disabled=state.screen!=='menu'||!unlocked;
+$('chooseSoldier').disabled=state.screen!=='menu';for(const [id,type] of [['chooseSoldier','soldier'],['chooseArcher','archer'],['chooseKnight','knight'],['chooseSpear','spear'],['chooseMage','mage']])$(id).classList.toggle('primary',state.selectedType===type);
+$('send').disabled=state.coins<spawnCost()||state.ended||state.screen!=='game';$('upgradeUnit').disabled=state.coins<unitCost()||state.ended||state.screen!=='game';$('upgradeSpeed').disabled=state.coins<speedCost()||state.ended||state.screen!=='game'||state.speedLevel>=4;$('upgradeIncomeBottom').disabled=state.coins<meatSpeedCost()||state.ended||state.screen!=='game';
+$('buyMaxMeat').disabled=state.screen!=='menu'||state.gold<capCost();$('buyIncome').disabled=state.screen!=='menu'||state.coins<incomeCost();$('buyBase').disabled=state.screen!=='menu'||state.gold<baseCost();$('buyArcher').disabled=state.screen!=='menu'||state.unlockedArcher||state.gold<10;$('buyKnight').disabled=state.screen!=='menu'||state.unlockedKnight||state.gold<25;$('buySpear').disabled=state.screen!=='menu'||state.unlockedSpear||state.gold<20;$('buyMage').disabled=state.screen!=='menu'||state.unlockedMage||state.gold<35;$('buyFire').disabled=state.screen!=='menu'||state.fireUnlocked||state.gold<25;$('buyHeal').disabled=state.screen!=='menu'||state.healUnlocked||state.gold<20;
+updateWorldUnlockButtons();
+$('fireAbility').disabled=state.screen!=='game'||state.ended||!state.fireUnlocked||state.fireUsed;$('healAbility').disabled=state.screen!=='game'||state.ended||!state.healUnlocked||state.healUsed;$('fireAbility').textContent=state.fireUsed?'🔥 Feuerstoß eingesetzt':'🔥 Feuerstoß (1× pro Level)';$('healAbility').textContent=state.healUsed?'💚 Heilung eingesetzt':'💚 Lager heilen (1× pro Level)';$('abilityStatus').textContent=(!state.fireUnlocked&&!state.healUnlocked)?'Fähigkeiten auf der Startseite mit Münzen freischalten.':`Feuerstoß: ${state.fireUnlocked?(state.fireUsed?'eingesetzt':'bereit'):'nicht freigeschaltet'} · Heilung: ${state.healUnlocked?(state.healUsed?'eingesetzt':'bereit'):'nicht freigeschaltet'}`;
+}
+function end(win){state.ended=true;state.endType=win?'win':'loss';state.paused=false;if(win){state.completedLevels=Math.max(state.completedLevels||0,state.level);state.gold+=10+state.level*3;configureWinDialog();$('levelOverlay').classList.add('show')}else{$('endTitle').textContent='💥 Lager verloren';$('endText').textContent='Gehe zurück zur Startseite, kaufe neue Kämpfer oder verbessere Stärke, Schnelligkeit und Fleischtempo.';$('overlay').classList.add('show')}updateUI();saveGame(false)}
+
+function enemyProfile(wi, elapsed=0){
+  const stage=wi.stage, world=wi.index, timeTier=Math.floor(elapsed/120);
+  const classes=['raider','raider','raider','guard','guard','guard','scout','scout','scout','brute','brute','brute','captain','captain','captain'];
+  const className=classes[Math.max(0,Math.min(14,stage-1))];
+  // Archetypes feel different, but their stats stay close enough that difficulty rises smoothly.
+  const kits={
+    raider:{hp:1.00,attack:1.00,speed:1.00,cool:.90},
+    guard:{hp:1.08,attack:1.02,speed:.92,cool:.96},
+    scout:{hp:.94,attack:.92,speed:1.12,cool:.78},
+    brute:{hp:1.16,attack:1.06,speed:.82,cool:1.02},
+    captain:{hp:1.18,attack:1.08,speed:.94,cool:.88}
+  };
+  const k=kits[className];
+  // Small increases every level; world 2 and 3 add only a modest extra challenge.
+  const baseHp=22+stage*2.15+world*5+timeTier*2;
+  const baseAttack=3.2+stage*.22+world*.55+timeTier*.2;
+  const baseSpeed=16+stage*.18+world*.4+timeTier*.15;
+  return {
+    enemyClass:className,
+    hp:Math.round(baseHp*k.hp),
+    attack:Math.max(3,Math.round(baseAttack*k.attack*10)/10),
+    speed:Math.round(baseSpeed*k.speed*10)/10,
+    cool:k.cool
+  };
+}
+
+function update(dt){
+if(state.paused)return;
+// Fleisch beginnt bei 0 und lädt auch auf der Start-/Shop-Seite langsam nach.
+if(!state.ended)state.coins=Math.min(state.energyMax,state.coins+dt*(0.55+((state.incomeLevel||1)-1)*0.18));
+if(state.ended||state.screen!=='game')return;
+state.elapsed+=dt;state.shake=Math.max(0,(state.shake||0)-dt*12);
+state.spawnTimer-=dt;if(state.spawnTimer<=0){
+  const wi=worldInfo(),profile=enemyProfile(wi,state.elapsed);
+  // The pace rises gradually in later levels, but never floods the battlefield.
+  state.spawnTimer=rand(4.4-wi.stage*.045-wi.index*.12,5.05-wi.stage*.045-wi.index*.12);
+  const enemyHp=profile.hp;
+  state.enemies.push({
+    x:850,y:307+rand(-15,15),hp:enemyHp,maxHp:enemyHp,
+    attack:profile.attack,speed:profile.speed,cool:rand(profile.cool*.75,profile.cool+0.15),
+    kind:'enemy',type:'enemy',enemyClass:profile.enemyClass,animTime:rand(0,2),swing:0,hitFlash:0,
+    moving:false,spawnIn:.2
+  });
+}
+const all=[...state.units,...state.enemies];
+for(const u of all){
+if(u.hp<=0)continue;u.animTime=(u.animTime||0)+dt;u.spawnIn=Math.max(0,(u.spawnIn||0)-dt);u.swing=Math.max(0,(u.swing||0)-dt);u.hitFlash=Math.max(0,(u.hitFlash||0)-dt);u.moving=false;const friends=u.kind==='ally'?state.units:state.enemies,foes=u.kind==='ally'?state.enemies:state.units;
+let target=null,dist=Infinity;
+for(const f of foes){if(f.hp<=0)continue;let d=Math.abs(f.x-u.x);if(d<dist){dist=d;target=f}}
+if(!target){
+let baseX=u.kind==='ally'?870:130,bd=Math.abs(baseX-u.x);
+if(bd<36){u.cool-=dt;if(u.cool<=0){u.cool=.85;u.swing=.24;u.attackDir=u.kind==='ally'?1:-1;if(u.kind==='ally'){state.enemyHp-=u.attack;addParticle(870,265,'#ffcc54',8);floatText(868,252,'-'+Math.round(u.attack),'#fff0a6',15);state.shake=Math.max(state.shake||0,2.2)}else{state.myHp-=u.attack;addParticle(130,265,'#ff6b6b',8);floatText(130,252,'-'+Math.round(u.attack),'#ffc4bf',15);state.shake=Math.max(state.shake||0,2.7)}}}
+else {u.moving=true;u.x+=(baseX>u.x?1:-1)*u.speed*dt*0.8;}
+}else if(dist>(u.kind==='ally'?(u.range||36):36)){u.moving=true;u.x+=(target.x>u.x?1:-1)*u.speed*dt*0.8}
+else{u.cool-=dt;if(u.cool<=0){u.cool=u.type==='archer'?1.15:.8;u.swing=.24;u.attackDir=target.x>=u.x?1:-1;target.hitFlash=.13;if(u.kind==='ally'&&(u.type==='archer'||u.type==='mage')){state.projectiles.push({x:u.x+10,y:u.y-20,startX:u.x+10,startY:u.y-20,target,progress:0,speed:u.type==='mage'?370:460,damage:u.attack,type:u.type});addParticle(u.x+10,u.y-20,u.type==='mage'?'#dca6ff':'#d7edff',3)}else{target.hp-=u.attack;addParticle(target.x,target.y-12,u.kind==='ally'?'#ffd65a':'#ff6868',u.kind==='ally'?6:5);floatText(target.x,target.y-28,'-'+Math.round(u.attack),u.kind==='ally'?'#ffe6a0':'#ffaaa4',12);if(target.hp<=0){if(target.kind==='enemy'){state.gold+=1;floatText(target.x,target.y-42,'+1 🪙','#ffe078',13)}addParticle(target.x,target.y,'#ffffff',12);addParticle(target.x,target.y,'#ffc45b',6);state.shake=Math.max(state.shake||0,1.2)}}}}
+}
+state.units=state.units.filter(u=>u.hp>0&&u.x<940);state.enemies=state.enemies.filter(u=>u.hp>0&&u.x>60);
+for(const a of state.projectiles){a.progress+=dt*a.speed/Math.max(90,Math.abs(a.target.x-a.startX));const q=Math.min(1,a.progress);a.x=a.startX+(a.target.x-a.startX)*q;a.y=a.startY+(a.target.y-12-a.startY)*q-Math.sin(q*Math.PI)*34;if(q>=1&&!a.done){a.done=true;if(a.target.hp>0){a.target.hp-=a.damage;a.target.hitFlash=.16;addParticle(a.x,a.y,a.type==='mage'?'#dca6ff':'#c7ebff',a.type==='mage'?13:8);floatText(a.target.x,a.target.y-28,'-'+Math.round(a.damage),a.type==='mage'?'#e8c7ff':'#c6eaff',13);if(a.target.hp<=0){if(a.target.kind==='enemy'){state.gold+=1;floatText(a.target.x,a.target.y-43,'+1 🪙','#ffe078',13)}addParticle(a.target.x,a.target.y,'#ffffff',12);addParticle(a.target.x,a.target.y,'#ffc45b',6);state.shake=Math.max(state.shake||0,1.2)}}}}
+state.projectiles=state.projectiles.filter(a=>!a.done);
+for(const p of state.particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}state.particles=state.particles.filter(p=>p.life>0);
+for(const f of state.floaters){f.y-=f.vy*dt;f.life-=dt}state.floaters=state.floaters.filter(f=>f.life>0);
+state.myHp=Math.max(0,state.myHp);state.enemyHp=Math.max(0,state.enemyHp);
+if(state.enemyHp<=0)end(true);else if(state.myHp<=0)end(false);
+}
+function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function draw(){
+setupCanvasResolution();const w=LOGICAL_WIDTH,h=LOGICAL_HEIGHT,t=state.visualTime||0,wi=worldInfo(),stage=wi.stage,world=wi.index;ctx.clearRect(0,0,w,h);ctx.save();if((state.shake||0)>.1)ctx.translate(rand(-state.shake,state.shake),rand(-state.shake,state.shake));
+const palettes=[
+[['#4c94c6','#d2e6e6','#6eaf76','#446b43','#b19a70'],['#b5b5cb','#d5d2ca','#7a9669','#4e664b','#9f8a69'],['#f3a36a','#f2d2a0','#a66f4c','#593d48','#80634d'],['#1c3760','#6e78a7','#415b70','#293d47','#665a63'],['#e9dc93','#e3e1c2','#9bba76','#506f47','#bea777'],['#86c8df','#e4f4f8','#70aa8b','#3e6959','#9f9278'],['#6d91ba','#d9cfca','#6d8a7c','#3c554c','#8b806d'],['#d57c5a','#eab087','#8f6e4d','#4d4a3e','#9b7959'],['#9bbfda','#e9e9e2','#7bb394','#476e63','#c3ae83'],['#d9a9bc','#eee0e0','#8f9b9a','#4c5e62','#8e7f7b'],['#5d9cae','#b2dbd5','#658f77','#354f50','#7c8f7b'],['#e8bf70','#edddb1','#a9b66c','#687444','#b09a62'],['#7186a8','#c2cbd5','#6c8c93','#3e555e','#9c998b'],['#e3a18b','#e9c8a7','#9a9d76','#4f6550','#9e826c'],['#70a6d3','#c6e0ee','#72a884','#426247','#b4a27b']],
+[['#3c1b2f','#9b4542','#56343a','#211b28','#8c3432'],['#501d24','#d65b34','#5d3530','#241a20','#a83e28'],['#342839','#8e5262','#4b3548','#1e1d26','#7e423d'],['#5b2530','#ee7944','#593d34','#262028','#cf522d'],['#1f2438','#8a3440','#3e3038','#161b27','#a34a36'],['#652e26','#e78a42','#654b37','#28202a','#b24f2f'],['#371b28','#a75b51','#46313b','#1c1b27','#9b3e32'],['#742f22','#f0a04f','#674231','#241e26','#d64b25'],['#332334','#b24942','#4b3637','#1a1b25','#96382e'],['#46232b','#d9714c','#543b38','#201c24','#c95130'],['#302535','#83444d','#4a3940','#171b25','#863b37'],['#632a25','#e76c39','#62402f','#211b22','#c84921'],['#382634','#bc6753','#51403e','#1c1c25','#9d4836'],['#56252b','#e38d55','#5b4034','#201a22','#b8462b'],['#241e2e','#9b3e42','#44323c','#151b25','#c34b2d']],
+[['#1d494f','#7aa79a','#557e58','#263f3e','#6c7b45'],['#274d63','#9cc2a0','#467e63','#233b48','#75964e'],['#302c55','#9484ac','#596c79','#2a3040','#8c9e49'],['#405e4d','#c2d58c','#62804e','#293a31','#a7ad4b'],['#1d384b','#72a7a5','#4e7b64','#1c2f39','#79a348'],['#4c375b','#a6b0a3','#527d6b','#2c3040','#b0ad56'],['#244952','#83b8a9','#4b795b','#1e343b','#7d9c3c'],['#3a2f48','#a7b992','#577b66','#252d38','#b6bd54'],['#173f48','#77a6a3','#477d69','#172e37','#92a73d'],['#315b62','#bdd4a2','#557b54','#273d3b','#b4a64c'],['#332f54','#968ab0','#576f70','#252e3a','#8caa45'],['#24545b','#8dc3ae','#557c5b','#203a3e','#a9bd4b'],['#47354f','#b1c29b','#5a7f65','#2d3138','#c0b84f'],['#1f4750','#7ca7a2','#4b7a62','#1b3337','#7e963c'],['#354f59','#b7cea0','#527c5d','#253839','#acb94b']]
+];
+const pal=palettes[world][stage-1];let sky=ctx.createLinearGradient(0,0,0,h);sky.addColorStop(0,pal[0]);sky.addColorStop(.54,pal[1]);sky.addColorStop(.72,pal[2]);sky.addColorStop(1,pal[3]);ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+// Sun/moon changes with the local level so all 45 battlefields get a distinct mood.
+const sunX=100+((stage*137+world*91)%800),sunY=48+(stage%4)*12;ctx.save();ctx.globalAlpha=.65;ctx.fillStyle=world===1?'#ff9b49':world===2?'#d5ff83':'#fff0bf';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=world===1?30:22;ctx.beginPath();ctx.arc(sunX,sunY,world===1?18:world===2?21:24,0,Math.PI*2);ctx.fill();ctx.restore();
+// Layered clouds drift; the silhouette and palette change per level.
+for(let i=0;i<6;i++){let cx=((i*213+t*(5+i%4)*(i%2?1:-1)+stage*37)%1250+1250)%1250-120,cy=44+(i%4)*28;ctx.save();ctx.globalAlpha=world===1?.14:world===2?.18:.13;ctx.fillStyle=world===1?'#39232c':world===2?'#c1f96b':'#fff';ctx.beginPath();ctx.ellipse(cx,cy,34+(stage%3)*3,9,0,0,Math.PI*2);ctx.ellipse(cx+17,cy-4,22,12,0,0,Math.PI*2);ctx.ellipse(cx-17,cy-1,20,10,0,0,Math.PI*2);ctx.fill();ctx.restore()}
+function mountain(points,color){ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(const p of points.slice(1))ctx.lineTo(p[0],p[1]);ctx.closePath();ctx.fillStyle=color;ctx.fill()}
+if(world===0){
+ // Green Kingdom: dramatic mountain silhouettes, changing rivers, bridges, villages and wooded ridges.
+ mountain([[0,214],[88,120+(stage%3)*8],[166,178],[240,78+(stage%4)*9],[337,181],[430,100],[520,183],[634,93],[730,179],[824,93+(stage%5)*5],[930,175],[1000,120],[1000,280],[0,280]],'#758d9a');mountain([[0,230],[110,164],[201,215],[316,129],[405,223],[518,144],[644,225],[761,146],[873,223],[1000,156],[1000,292],[0,292]],'#536f79');
+ ctx.fillStyle='#6aa6ad';ctx.beginPath();ctx.moveTo(0,245+stage%4*5);ctx.quadraticCurveTo(230,220,380,263);ctx.quadraticCurveTo(580,305,700,248);ctx.quadraticCurveTo(850,209,1000,250);ctx.lineTo(1000,302);ctx.lineTo(0,302);ctx.fill();ctx.strokeStyle='#c2f3f4';ctx.globalAlpha=.35;for(let i=0;i<10;i++){let x=(i*112+t*22+stage*23)%1040;ctx.beginPath();ctx.moveTo(x,260+(i%4)*7);ctx.lineTo(x+30,258+(i%4)*7);ctx.stroke()}ctx.globalAlpha=1;
+ // Five different prop styles rotate: pine forest, towers, windmills, ruins, farm plots.
+ for(let i=0;i<14;i++){let x=(i*81+stage*29)%1020,y=248+(i%4)*7; if(stage%5===0){ctx.fillStyle='#736d68';ctx.fillRect(x,y-18,8,22);ctx.fillRect(x-4,y-24,16,5)}else if(stage%5===1||stage%5===4){ctx.fillStyle='#42634c';ctx.beginPath();ctx.moveTo(x,y-28);ctx.lineTo(x-14,y-4);ctx.lineTo(x+14,y-4);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(x,y-19);ctx.lineTo(x-12,y+2);ctx.lineTo(x+12,y+2);ctx.closePath();ctx.fill()}else if(stage%5===2){ctx.strokeStyle='#eee1bd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-25);ctx.lineTo(x,y+3);ctx.moveTo(x-12,y-15);ctx.lineTo(x+12,y-15);ctx.moveTo(x-9,y-24);ctx.lineTo(x+9,y-6);ctx.moveTo(x-9,y-6);ctx.lineTo(x+9,y-24);ctx.stroke()}else{ctx.fillStyle='#7b8a79';ctx.fillRect(x-9,y-19,18,22);ctx.fillStyle='#c9bd91';ctx.fillRect(x-3,y-12,6,15)}}
+}else if(world===1){
+ // Volcano world: red sky, ash-filled mountains, molten lava streams and glowing vents.
+ mountain([[0,244],[100,153],[175,207],[300,65+(stage%4)*8],[395,202],[530,100],[620,202],[760,70+(stage%5)*7],[855,202],[940,124],[1000,190],[1000,302],[0,302]],'#552f36');mountain([[0,254],[150,201],[270,235],[390,172],[500,232],[650,181],[770,230],[900,172],[1000,220],[1000,310],[0,310]],'#342632');
+ // Main volcano cone and glowing crater are placed differently each level.
+ const vx=170+(stage*43)%650,vy=95+(stage%3)*8;mountain([[vx-160,263],[vx-66,vy+18],[vx-18,vy-28],[vx+14,vy-30],[vx+70,vy+20],[vx+165,263]],stage%2?'#3b2730':'#493039');ctx.strokeStyle='#ff7c3a';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(vx-18,vy-25);ctx.lineTo(vx-12,vy+6);ctx.lineTo(vx+2,vy+28);ctx.lineTo(vx+18,vy+55);ctx.stroke();ctx.strokeStyle='#ffd15f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(vx-12,vy-10);ctx.lineTo(vx-3,vy+13);ctx.lineTo(vx+13,vy+34);ctx.stroke();
+ // Lava canyon and branching fissures.
+ ctx.fillStyle='#291a25';ctx.beginPath();ctx.moveTo(0,316);ctx.quadraticCurveTo(210,292,360,332);ctx.quadraticCurveTo(540,371,705,327);ctx.quadraticCurveTo(860,290,1000,320);ctx.lineTo(1000,369);ctx.quadraticCurveTo(820,340,700,375);ctx.quadraticCurveTo(500,415,330,365);ctx.quadraticCurveTo(150,325,0,363);ctx.fill();ctx.strokeStyle=stage%3===0?'#ffca50':'#f45b2d';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(0,341);ctx.quadraticCurveTo(230,310,375,350);ctx.quadraticCurveTo(550,393,712,349);ctx.quadraticCurveTo(865,315,1000,341);ctx.stroke();ctx.strokeStyle='#ffe495';ctx.lineWidth=2;ctx.stroke();
+ for(let i=0;i<18;i++){let x=(i*67+stage*41)%1000,y=255+(i%5)*17;ctx.fillStyle=i%3===0?'#d85d34':'#4b3036';ctx.beginPath();ctx.moveTo(x-10,y+9);ctx.lineTo(x-4,y-13-(i%4)*2);ctx.lineTo(x+5,y-8);ctx.lineTo(x+13,y+10);ctx.closePath();ctx.fill()}ctx.save();for(let i=0;i<28;i++){let x=(i*47+t*(8+i%4)+stage*19)%1000,y=130+(i*37)%210;ctx.globalAlpha=.2+.25*(.5+.5*Math.sin(t*2+i));ctx.fillStyle=i%3?'#ff7841':'#ffd77b';ctx.beginPath();ctx.arc(x,y,1.4+i%3,0,Math.PI*2);ctx.fill()}ctx.restore();
+}else{
+ // Acid world: alien towers, lime-colored pools, bubbles and toxic mists.
+ mountain([[0,245],[85,166],[170,224],[270,105],[365,223],[470,150],[570,230],[690,113],[790,228],[895,140],[1000,211],[1000,302],[0,302]],'#40565c');mountain([[0,258],[120,218],[236,245],[360,185],[480,243],[600,187],[722,239],[840,180],[1000,224],[1000,315],[0,315]],'#253c40');
+ // Acid pools and branching channels
+ for(let i=0;i<4;i++){let x=(i*281+stage*47)%1020-50,y=285+(i%2)*35;ctx.fillStyle=i%2?'#a6df42':'#72d64f';ctx.globalAlpha=.65;ctx.beginPath();ctx.ellipse(x,y,80+(stage%4)*5,13+(i%3)*3,-.08,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#d9ff8a';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y,65,7,-.08,0,Math.PI*2);ctx.stroke()}
+ for(let i=0;i<11;i++){let x=(i*99+stage*31)%1010,y=239+(i%4)*9;ctx.fillStyle=i%2?'#446a5b':'#66577a';ctx.beginPath();ctx.moveTo(x-13,y+13);ctx.lineTo(x-3,y-38-(i%3)*7);ctx.lineTo(x+7,y-18);ctx.lineTo(x+13,y+13);ctx.closePath();ctx.fill();ctx.fillStyle='#b4f25a';ctx.fillRect(x-2,y-10,3,13)}
+ ctx.save();for(let i=0;i<17;i++){let x=(i*59+t*(3+i%5)+stage*13)%1000,y=225+(i*29)%122+Math.sin(t*1.6+i)*4;ctx.globalAlpha=.18+.22*(.5+.5*Math.sin(t*2.4+i));ctx.strokeStyle='#d8ff88';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,2+(i%4),0,Math.PI*2);ctx.stroke()}ctx.restore();
+}
+// Ground, unique route markings and details for each of the 45 levels.
+ctx.fillStyle=pal[2];ctx.beginPath();ctx.moveTo(0,268);ctx.quadraticCurveTo(250,245,430,278);ctx.quadraticCurveTo(710,302,1000,257);ctx.lineTo(1000,430);ctx.lineTo(0,430);ctx.fill();
+const road=world===0?'#b8a17b':world===1?'#4a3438':'#40524a',roadLight=world===0?'#d4bd91':world===1?'#5b4540':'#56694a';ctx.fillStyle=road;ctx.beginPath();ctx.moveTo(70,430);ctx.lineTo(238,286);ctx.lineTo(770,286);ctx.lineTo(950,430);ctx.fill();ctx.fillStyle=roadLight;ctx.beginPath();ctx.moveTo(140,430);ctx.lineTo(296,296);ctx.lineTo(704,296);ctx.lineTo(870,430);ctx.fill();
+for(let i=0;i<42;i++){let x=(i*173+stage*29+37)%1000,y=294+(i*47+stage*11)%132;ctx.fillStyle=world===0?(i%2?'#426944':'#d4bd91'):world===1?(i%2?'#241f2b':'#8c4c40'):(i%2?'#233d39':'#8fbf4b');ctx.beginPath();ctx.ellipse(x,y,2+(i%4),1+(i%2),-.3,0,Math.PI*2);ctx.fill()}
+// World-specific particles and a drifting atmospheric layer.
+if(world===1||world===2){ctx.save();for(let i=0;i<26;i++){let x=(i*41+t*(world===1?8:4)+stage*17)%1000,y=200+(i*31)%195+Math.sin(t+i)*5;ctx.globalAlpha=.15+.25*(.5+.5*Math.sin(t*2+i));ctx.fillStyle=world===1?(i%2?'#ff8543':'#ffe3a0'):(i%2?'#c8ff66':'#e9ffb8');ctx.beginPath();ctx.arc(x,y,1+(i%3),0,Math.PI*2);ctx.fill()}ctx.restore()}
+
+// Distinct landmark for this level: its silhouette and biome treatment change through all 15 stages.
+{
+  const variant=(stage-1)%5, lx=360+((stage*47+world*83)%280), lift=stage%4;
+  const baseY=279-(stage%3)*2, size=1+lift*.06;
+  ctx.save();ctx.translate(lx,baseY);ctx.scale(size,size);
+  const stone=world===0?'#647b7d':world===1?'#4a303b':'#486b55';
+  const bright=world===0?'#d3c29a':world===1?'#ff9347':'#caff72';
+  ctx.fillStyle='#07121c55';ctx.beginPath();ctx.ellipse(0,1,33,5,0,0,Math.PI*2);ctx.fill();
+  if(variant===0){
+    // Watch tower / volcanic vent / acid beacon
+    ctx.fillStyle=stone;ctx.fillRect(-13,-37,26,37);ctx.fillStyle=bright;
+    ctx.beginPath();ctx.moveTo(-20,-37);ctx.lineTo(0,-52-lift*2);ctx.lineTo(20,-37);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#15222b';ctx.fillRect(-3,-25,6,12);ctx.fillRect(-3,-8,6,8);
+  }else if(variant===1){
+    // Arched bridge ruin
+    ctx.fillStyle=stone;ctx.fillRect(-34,-18,68,18);ctx.fillRect(-30,-28,10,28);ctx.fillRect(20,-28,10,28);
+    ctx.fillStyle='#17222a';ctx.beginPath();ctx.arc(0,-17,13,Math.PI,0);ctx.lineTo(13,0);ctx.lineTo(-13,0);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=bright;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-32,-18);ctx.lineTo(32,-18);ctx.stroke();
+  }else if(variant===2){
+    // Crystal cluster / obsidian shard / toxic crystal
+    for(let k=0;k<3;k++){const x=-20+k*18,ht=26+((stage+k)%4)*5;ctx.fillStyle=stone;ctx.beginPath();ctx.moveTo(x-6,0);ctx.lineTo(x-3,-ht+7);ctx.lineTo(x+2,-ht);ctx.lineTo(x+7,-ht+10);ctx.lineTo(x+8,0);ctx.closePath();ctx.fill();ctx.strokeStyle=bright;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x+2,-ht+2);ctx.lineTo(x+4,-7);ctx.stroke()}
+  }else if(variant===3){
+    // A broken monolith with a glowing seam
+    ctx.fillStyle=stone;ctx.beginPath();ctx.moveTo(-18,0);ctx.lineTo(-12,-39);ctx.lineTo(-2,-44);ctx.lineTo(5,-29);ctx.lineTo(18,-31);ctx.lineTo(22,0);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=bright;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-1,-38);ctx.lineTo(3,-25);ctx.lineTo(-4,-14);ctx.lineTo(2,-5);ctx.stroke();
+  }else{
+    // Small shrine with a raised crown
+    ctx.fillStyle=stone;ctx.fillRect(-22,-22,44,22);ctx.fillRect(-27,-27,54,6);ctx.fillRect(-16,-33,8,11);ctx.fillRect(8,-33,8,11);
+    ctx.fillStyle=bright;ctx.beginPath();ctx.moveTo(-20,-34);ctx.lineTo(0,-48-lift);ctx.lineTo(20,-34);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#15222b';ctx.fillRect(-4,-16,8,16);
+  }
+  ctx.restore();
+}
+
+// Level marker on terrain makes every stage unmistakable and unique.
+ctx.save();ctx.globalAlpha=.22;ctx.fillStyle=world===0?'#fff':world===1?'#ff7849':'#d5ff80';ctx.font='900 62px system-ui';ctx.textAlign='center';ctx.fillText(String(stage).padStart(2,'0'),500,385);ctx.restore();
+function flag(x,y,color,flip){let wave=Math.sin(t*3+x*.02)*4;ctx.fillStyle='#d6c7a2';ctx.fillRect(x,y,3,65);ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x+3,y+4);ctx.quadraticCurveTo(x+(flip?-16:16),y+4+wave,x+(flip?-31:31),y+13);ctx.lineTo(x+3,y+30);ctx.closePath();ctx.fill();ctx.strokeStyle='#ffffff25';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+5,y+11+wave*.3);ctx.lineTo(x+(flip?-24:24),y+14);ctx.stroke();ctx.fillStyle=world===2?'#caff74':'#f3d889';ctx.beginPath();ctx.arc(x+3,y+17,4,0,Math.PI*2);ctx.fill()}
+flag(96,170,world===0?'#2873bd':world===1?'#dc5b35':'#53bf83',false);flag(900,163,world===0?'#9e2934':world===1?'#fb7136':'#a4db3f',true);
+// Tiny animated plants on green world, lava/acid rifts beneath the road.
+drawBase(8,190,false);drawBase(842,181,true);
+ctx.fillStyle='#ffffffdd';ctx.font='bold 17px system-ui';ctx.textAlign='center';ctx.fillText(wi.name.toUpperCase()+' · LEVEL '+stage,500,246);
+state.units.forEach(drawUnit);state.enemies.forEach(drawUnit);
+for(const a of state.projectiles){ctx.save();ctx.strokeStyle=a.type==='mage'?'#dfb3ff':'#d9efff';ctx.lineWidth=a.type==='mage'?4:2;ctx.shadowColor=a.type==='mage'?'#c87dff':'#8bd6ff';ctx.shadowBlur=8;ctx.beginPath();ctx.moveTo(a.x-13,a.y+4);ctx.lineTo(a.x,a.y);ctx.stroke();ctx.fillStyle=a.type==='mage'?'#f1d4ff':'#f7f4df';ctx.beginPath();ctx.arc(a.x,a.y,a.type==='mage'?4:2,0,Math.PI*2);ctx.fill();ctx.restore()}
+state.particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=4;ctx.beginPath();ctx.arc(p.x,p.y,p.size||3,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1});state.floaters.forEach(f=>{ctx.save();ctx.globalAlpha=Math.min(1,f.life/f.max);ctx.textAlign='center';ctx.font='900 '+f.size+'px system-ui';ctx.lineWidth=3;ctx.strokeStyle='#101a28';ctx.strokeText(f.text,f.x,f.y);ctx.fillStyle=f.color;ctx.shadowColor=f.color;ctx.shadowBlur=7;ctx.fillText(f.text,f.x,f.y);ctx.restore()});
+let vg=ctx.createRadialGradient(w/2,h*.45,110,w/2,h*.45,620);vg.addColorStop(.68,'#14213100');vg.addColorStop(1,world===1?'#100a1248':world===2?'#0b281e42':'#09121b45');ctx.fillStyle=vg;ctx.fillRect(0,0,w,h);ctx.restore();
+}
+function drawBase(x,y,enemy){
+  const biome=worldInfo().index;
+  const palette=biome===0
+    ? {front:enemy?'#8f4a51':'#4d7898',light:enemy?'#c87d7b':'#8dbbd5',top:enemy?'#d99a88':'#b9d9e8',side:enemy?'#542c35':'#2b4c67',dark:enemy?'#351e27':'#172f45',roof:enemy?'#a83b47':'#2f6db1',glow:'#f5daa0'}
+    : biome===1
+    ? {front:enemy?'#8a4538':'#634d59',light:enemy?'#d27853':'#bc8b70',top:'#eab08a',side:'#432b33',dark:'#281b25',roof:enemy?'#d94c2e':'#b9623d',glow:'#ffb85d'}
+    : {front:enemy?'#617c46':'#327d70',light:enemy?'#b4d76d':'#7bd5ba',top:'#d7ef9b',side:'#244e49',dark:'#173733',roof:enemy?'#a4cc43':'#2bb09a',glow:'#d9ff8a'};
+  const {front,light,top,side,dark,roof,glow}=palette;
+  ctx.save();ctx.translate(x,y);ctx.scale(1.13,1.13);
+  const poly=(pts,fill,stroke=null,lw=1)=>{ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(const q of pts.slice(1))ctx.lineTo(q[0],q[1]);ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}};
+  // A tidy cast shadow anchors the building to the ground.
+  ctx.fillStyle='#0b142055';ctx.beginPath();ctx.ellipse(68,128,82,13,0,0,Math.PI*2);ctx.fill();
+  // Raised central keep behind the curtain wall gives the castle a layered silhouette.
+  poly([[50,49],[59,39],[100,39],[91,49]],top,'#1a2533',1.2);
+  poly([[91,49],[100,39],[100,91],[91,99]],side,dark,1.2);
+  poly([[50,49],[91,49],[91,99],[50,99]],front,dark,1.2);
+  for(let r=0;r<3;r++){
+    ctx.fillStyle=(r%2)?light:front;ctx.fillRect(56,55+r*12,29,9);
+    ctx.strokeStyle='#ffffff25';ctx.lineWidth=.8;ctx.strokeRect(56,55+r*12,29,9);
+  }
+  // Keep roof/crown in the same perspective as the side planes.
+  poly([[47,43],[59,27],[96,27],[100,39],[59,39]],top,dark,1.1);
+  poly([[47,43],[59,27],[59,39],[50,49]],light,dark,.9);
+  for(let i=0;i<4;i++){const bx=59+i*9;poly([[bx,27],[bx+3,22],[bx+10,22],[bx+7,27]],light,dark,.5);ctx.fillStyle=front;ctx.fillRect(bx,27,7,5)}
+  ctx.fillStyle=dark;ctx.fillRect(67,59,5,13);ctx.fillStyle=glow;ctx.globalAlpha=.8;ctx.fillRect(68,61,2,8);ctx.globalAlpha=1;
+  // Main wall: front, top bevel and right side create a consistent 3D angle.
+  poly([[20,49],[32,39],[131,39],[119,49]],top,'#1a2533',1.5);
+  poly([[119,49],[131,39],[131,108],[119,119]],side,dark,1.5);
+  poly([[20,49],[119,49],[119,119],[20,119]],front,dark,1.5);
+  poly([[20,111],[119,111],[119,119],[20,119]],dark);
+  // Regular stonework and fine highlights.
+  for(let r=0;r<4;r++){
+    const yy=58+r*13;
+    for(let c=0;c<5;c++){
+      const xx=25+c*18+(r%2)*4;
+      ctx.fillStyle=((r+c)%4===0)?side:front;
+      ctx.fillRect(xx,yy,15,10);
+      ctx.strokeStyle='#ffffff25';ctx.lineWidth=.8;ctx.strokeRect(xx,yy,15,10);
+      ctx.fillStyle='#0b14252b';ctx.fillRect(xx,yy+8,15,2);
+    }
+  }
+  // Two matching towers, with a visible side plane, crown and neat battlements.
+  function tower(tx){
+    const tw=35, ty=11, foot=113;
+    poly([[tx+tw-4,ty+12],[tx+tw+5,ty+5],[tx+tw+5,foot-5],[tx+tw-4,foot]],side,dark,1.4);
+    poly([[tx,ty+12],[tx+tw-4,ty+12],[tx+tw-4,foot],[tx,foot-2]],front,dark,1.4);
+    poly([[tx-3,ty+12],[tx+5,ty+3],[tx+tw+5,ty+3],[tx+tw-4,ty+12]],top,dark,1.2);
+    poly([[tx-3,ty+12],[tx+tw-4,ty+12],[tx+tw-4,ty+20],[tx-3,ty+20]],light,dark,.8);
+    poly([[tx+tw-4,ty+12],[tx+tw+5,ty+3],[tx+tw+5,ty+11],[tx+tw-4,ty+20]],side,dark,.8);
+    // Simple crenellations in an even rhythm.
+    for(let i=0;i<3;i++){
+      const bx=tx+2+i*11;
+      poly([[bx,ty+4],[bx+3,ty],[bx+10,ty],[bx+7,ty+4]],light,'#273444',.6);
+      ctx.fillStyle=front;ctx.fillRect(bx,ty+4,7,7);
+    }
+    // Narrow dark window with a biome-coloured glint.
+    ctx.fillStyle=dark;ctx.fillRect(tx+15,ty+32,4,12);
+    ctx.fillStyle=glow;ctx.globalAlpha=.72;ctx.fillRect(tx+16,ty+34,2,7);ctx.globalAlpha=1;
+    for(let r=0;r<3;r++){ctx.fillStyle='#ffffff27';ctx.fillRect(tx+4,ty+51+r*16,23,1.5)}
+  }
+  tower(8);tower(91);
+  // A reinforced central gate with clear arch and wooden portcullis.
+  poly([[47,119],[47,85],[52,75],[69,68],[86,75],[91,85],[91,119]],dark,top,2);
+  ctx.fillStyle='#0a111b';ctx.beginPath();ctx.moveTo(54,118);ctx.lineTo(54,86);ctx.arc(69,86,15,Math.PI,0);ctx.lineTo(84,118);ctx.closePath();ctx.fill();
+  ctx.fillStyle=roof;ctx.fillRect(53,112,32,6);
+  ctx.strokeStyle=top;ctx.lineWidth=2;for(let gx=57;gx<=81;gx+=6){ctx.beginPath();ctx.moveTo(gx,87);ctx.lineTo(gx,116);ctx.stroke()}
+  // Banner mounted on a straight mast with a gently waving cloth.
+  ctx.strokeStyle='#dfc991';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(69,0);ctx.lineTo(69,32);ctx.stroke();
+  const wave=Math.sin((state.visualTime||0)*2.5+x*.01)*2.2;
+  poly([[71,3],[87,5+wave],[104,12],[87,19+wave],[71,23]],roof,dark,.8);
+  ctx.strokeStyle='#ffffff55';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(73,5);ctx.lineTo(87,8+wave);ctx.stroke();
+  ctx.fillStyle=glow;ctx.beginPath();ctx.arc(82,11,3,0,Math.PI*2);ctx.fill();
+  // Subtle world-specific detail, kept secondary to the castle shape.
+  if(biome===1){ctx.strokeStyle='#ff8c47';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(23,68);ctx.lineTo(35,65);ctx.moveTo(103,83);ctx.lineTo(115,78);ctx.stroke()}
+  else if(biome===2){ctx.fillStyle='#d9ff8a';ctx.globalAlpha=.75;ctx.fillRect(28,121,16,2);ctx.fillRect(92,121,14,2);ctx.globalAlpha=1}
+  // Bright top edges sell the stone volume without adding visual clutter.
+  ctx.strokeStyle='#ffffff3b';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(20,49);ctx.lineTo(32,39);ctx.lineTo(131,39);ctx.stroke();ctx.beginPath();ctx.moveTo(20,49);ctx.lineTo(119,49);ctx.stroke();
+  ctx.restore();
+}
+function drawUnit(u){
+const blue=u.kind==='ally',mage=u.type==='mage',ec=u.enemyClass||'raider';
+const enemyArmor=ec==='guard'?'#8e4b45':ec==='scout'?'#b27a43':ec==='brute'?'#63313a':ec==='captain'?'#7a3157':'#b33e45';
+const enemyDark=ec==='guard'?'#492a32':ec==='scout'?'#68452e':ec==='brute'?'#351d27':ec==='captain'?'#351c37':'#69272d';
+const armor=mage?(blue?'#7e62cf':'#a34e81'):blue?'#347ec2':enemyArmor;
+const dark=mage?(blue?'#443571':'#542444'):blue?'#1d4777':enemyDark,face=blue?1:-1;
+const walk=u.moving?Math.sin((u.animTime||0)*13)*3:0;
+const bounce=u.moving?Math.abs(Math.sin((u.animTime||0)*13))*1.7:0;
+ctx.save();let entrance=(u.spawnIn||0)>0?Math.sin((1-u.spawnIn/.25)*Math.PI/2):1;ctx.translate(u.x,u.y-bounce+(1-entrance)*12);ctx.globalAlpha=entrance;const enemyStage=worldInfo().stage;
+const classSizeBonus=ec==='brute'?.045:ec==='captain'?.025:ec==='guard'?.015:ec==='scout'?-.015:0;
+const archetypeScale=!blue?Math.min(1.12,.96+Math.max(0,enemyStage-1)*.008+classSizeBonus):1;
+ctx.scale(1.32*archetypeScale*(.9+.1*entrance),1.32*archetypeScale*(.9+.1*entrance));
+// Ground shadow
+ctx.fillStyle='#18251f55';ctx.beginPath();ctx.ellipse(0,10,15,5,0,0,Math.PI*2);ctx.fill();
+// Walking legs move in opposite directions
+ctx.strokeStyle=dark;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-5,2);ctx.lineTo(-7-walk,10);ctx.moveTo(5,2);ctx.lineTo(7+walk,10);ctx.stroke();
+// Armor body and shoulder plates
+ctx.fillStyle=dark;ctx.fillRect(-11,-10,22,17);ctx.fillStyle=armor;ctx.beginPath();if(mage){ctx.moveTo(-9,-11);ctx.lineTo(9,-11);ctx.lineTo(13,8);ctx.lineTo(-13,8)}else{ctx.moveTo(-9,-9);ctx.lineTo(9,-9);ctx.lineTo(7,5);ctx.lineTo(0,9);ctx.lineTo(-7,5)}ctx.closePath();ctx.fill();if(u.type==='knight'){ctx.fillStyle=blue?'#d6e4eb':'#ebc1b5';ctx.fillRect(-11,-11,22,5);ctx.fillStyle='#c9a868';ctx.fillRect(-2,-10,4,14)}if(u.type==='archer'){ctx.strokeStyle=blue?'#d8ecf5':'#f0d1c0';ctx.lineWidth=2;ctx.beginPath();ctx.arc(-11,-9,5,-1,1);ctx.stroke()}
+ctx.strokeStyle='#ffffff65';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-5,-6);ctx.lineTo(-3,3);ctx.stroke();
+if(!blue&&ec==='guard'){ctx.fillStyle='#c8b17b';ctx.fillRect(-12,-12,24,4);ctx.fillStyle='#e5d6ac';ctx.fillRect(-10,-6,20,2)}
+if(!blue&&ec==='brute'){ctx.fillStyle='#211b24';ctx.fillRect(-14,-11,28,7);ctx.fillStyle='#8d6260';ctx.fillRect(-13,-10,7,5);ctx.fillRect(6,-10,7,5)}
+if(!blue&&ec==='captain'){ctx.fillStyle='#e8c36e';ctx.fillRect(-11,-12,22,3);ctx.fillStyle='#ffe4a1';ctx.fillRect(-2,-14,4,5)}
+ctx.fillStyle=blue?'#83b5dd':ec==='scout'?'#e9c88f':'#df8581';ctx.fillRect(-10,-8,5,6);ctx.fillRect(5,-8,5,6);
+// Face and helmet
+ctx.fillStyle='#c99570';ctx.beginPath();ctx.arc(0,-16,7,0,Math.PI*2);ctx.fill();
+ctx.fillStyle=dark;ctx.beginPath();ctx.arc(0,-18,8,Math.PI,Math.PI*2);ctx.lineTo(8,-15);ctx.lineTo(-8,-15);ctx.closePath();ctx.fill();
+ctx.fillStyle=armor;ctx.fillRect(-8,-19,16,4);ctx.fillStyle='#e1c88d';ctx.fillRect(-2,-23,4,4);if(u.type==='knight'||(!blue&&ec==='captain')){ctx.fillStyle=dark;ctx.beginPath();ctx.moveTo(-8,-20);ctx.lineTo(-4,-27);ctx.lineTo(0,-30);ctx.lineTo(4,-27);ctx.lineTo(8,-20);ctx.closePath();ctx.fill();ctx.fillStyle='#f2dca0';ctx.fillRect(-1,-29,2,5)}if(!blue&&ec==='scout'){ctx.fillStyle='#4c5a37';ctx.beginPath();ctx.moveTo(-8,-17);ctx.lineTo(-5,-26);ctx.lineTo(4,-25);ctx.lineTo(8,-17);ctx.closePath();ctx.fill()}if(!blue&&ec==='brute'){ctx.fillStyle='#b49a7a';ctx.fillRect(-10,-19,20,4);ctx.fillStyle='#2a1b22';ctx.fillRect(-5,-18,3,2);ctx.fillRect(3,-18,3,2)}
+// Shield or magical orb.
+if(mage){ctx.fillStyle='#d9b7ff';ctx.shadowColor='#be79ff';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(face*13,-10,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}ctx.fillStyle=mage?'#5b3b7c':blue?'#225ba0':ec==='guard'?'#c2a56d':ec==='captain'?'#8a4265':'#7d2730';ctx.beginPath();if(!blue&&ec==='guard'){ctx.moveTo(-11,-11);ctx.lineTo(-23,-8);ctx.lineTo(-22,5);ctx.lineTo(-15,11);ctx.lineTo(-7,4)}else if(!blue&&ec==='brute'){ctx.moveTo(-12,-7);ctx.lineTo(-20,-3);ctx.lineTo(-18,5);ctx.lineTo(-12,7);ctx.lineTo(-7,2)}else{ctx.moveTo(-12,-8);ctx.lineTo(-19,-5);ctx.lineTo(-18,4);ctx.lineTo(-12,8);ctx.lineTo(-7,3)}ctx.closePath();ctx.fill();ctx.strokeStyle='#d7c48b';ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.moveTo(-13,-5);ctx.lineTo(-12,5);ctx.stroke();if(!blue&&ec==='guard'){ctx.strokeStyle='#f7e9ba';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-19,-4);ctx.lineTo(-12,5);ctx.moveTo(-19,5);ctx.lineTo(-13,-4);ctx.stroke()}
+// Sword, bow or staff animates with attacks.
+const phase=u.swing>0?1-u.swing/.24:0;
+const swingAngle=u.swing>0?(-.95+Math.sin(phase*Math.PI)*2.0):-.55;
+ctx.save();ctx.translate(face*7,-8);ctx.rotate(face*swingAngle);
+if(u.type==='mage'){ctx.strokeStyle='#8a6b4f';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(face*2,-24);ctx.stroke();ctx.fillStyle='#d9a8ff';ctx.shadowColor='#c47aff';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(face*2,-25,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}else if(u.type==='archer'){ctx.strokeStyle='#8a6b4f';ctx.lineWidth=2;ctx.beginPath();ctx.arc(face*2,-13,8,-1.3,1.3);ctx.stroke();ctx.strokeStyle='#dce6ec';ctx.beginPath();ctx.moveTo(face*2,-20);ctx.lineTo(face*2,-6);ctx.stroke();}else if(!blue&&ec==='brute'){ctx.strokeStyle='#493127';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(face*4,-13);ctx.stroke();ctx.fillStyle='#6d7078';ctx.strokeStyle='#c3b7a2';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(face*1,-27,12,10,2);ctx.fill();ctx.stroke();ctx.fillStyle='#c3b7a2';ctx.fillRect(face*4,-29,4,14)}else if(!blue&&ec==='scout'){ctx.strokeStyle='#5d4630';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(face*3,-22);ctx.stroke();ctx.strokeStyle='#d8c69b';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(face*3,-22);ctx.lineTo(face*5,-29);ctx.stroke()}else{ctx.strokeStyle='#55402d';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(face*1,-13);ctx.stroke();
+ctx.strokeStyle='#dce6ec';ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(face*1,-12);ctx.lineTo(face*2,-24);ctx.stroke();
+ctx.strokeStyle='#fff8d9';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(face*2,-15);ctx.lineTo(face*2,-22);ctx.stroke();
+ctx.strokeStyle='#cdb577';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-3,-11);ctx.lineTo(4,-11);ctx.stroke();}ctx.restore();
+// Bright curved slash trail appears during the swing
+if(u.swing>0){ctx.save();ctx.globalAlpha=Math.max(0,u.swing/.24)*.9;ctx.strokeStyle=blue?'#fff0a0':'#ffc0a8';ctx.lineWidth=2.8;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(face*5,-7);ctx.quadraticCurveTo(face*25,-28,face*28,-3);ctx.stroke();ctx.restore();}
+// White impact flash on hit
+if(u.hitFlash>0){ctx.globalAlpha=Math.min(1,u.hitFlash/.13)*.7;ctx.fillStyle='#fff8dc';ctx.beginPath();ctx.ellipse(0,-5,10,13,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
+// Health bar
+ctx.fillStyle='#17212c';ctx.fillRect(-13,-30,26,4);ctx.fillStyle=blue?'#51df7c':'#ff5a5a';ctx.fillRect(-12,-29,24*Math.max(0,u.hp/u.maxHp),2);
+ctx.restore();
+}
+let lastUI=0;
+function frame(now){let dt=Math.min(.04,(now-state.last)/1000||0);state.last=now;if(!state.paused)state.visualTime=(state.visualTime||0)+dt;update(dt);draw();if(now-lastUI>150){updateUI();lastUI=now}if(now-lastSaveAt>4000){saveGame(false);lastSaveAt=now}requestAnimationFrame(frame)}
+
+// Spiel im Tablet-Modus: Pinch-Zoom und versehentliches Doppeltippen im Spiel verhindern.
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
+document.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false});
+document.addEventListener('gestureend',e=>e.preventDefault(),{passive:false});
+document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+document.addEventListener('dblclick',e=>{if(e.target.closest('.app'))e.preventDefault()},{passive:false});
+document.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey)e.preventDefault()},{passive:false});
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&['+','=','-','0','_'].includes(e.key)){e.preventDefault();e.stopPropagation();}
+},true);
+
+if(!loadSavedGame())reset();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
